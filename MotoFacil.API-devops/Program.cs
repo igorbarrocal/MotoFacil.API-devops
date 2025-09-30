@@ -4,6 +4,7 @@ using MotoFacil.API.Services;
 using MotoFacil.API.Infrastructure.Repositories;
 using MotoFacil.API.Infrastructure.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Swashbuckle.AspNetCore.Filters; 
 
 namespace MotoFacil.API
 {
@@ -26,15 +27,11 @@ namespace MotoFacil.API
 
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+
+            builder.Services.AddSwaggerGen(c => c.ExampleFilters());
+            builder.Services.AddSwaggerExamplesFromAssemblyOf<Program>();
 
             var app = builder.Build();
-
-            using (var scope = app.Services.CreateScope())
-            {
-                var db = scope.ServiceProvider.GetRequiredService<MotoFacilContext>();
-                db.Database.Migrate();
-            }
 
             app.UseSwagger();
             app.UseSwaggerUI();
