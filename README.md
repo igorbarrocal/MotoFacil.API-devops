@@ -61,7 +61,7 @@ az sql db show-connection-string --server motofacilserver --name motofacil-db --
 
 ```sh
 az sql server firewall-rule create --resource-group motofacil-rg --server motofacilserver --name AllowAzureServices --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
-az sql server firewall-rule create --resource-group motofacil-rg --server motofacilserver --name AllowLocal --start-ip-address 177.33.86.172 --end-ip-address 177.33.86.172
+az sql server firewall-rule create --resource-group motofacil-rg --server motofacilserver --name AllowLocal --start-ip-address <SEU IP> --end-ip-address <SEU IP>
 ```
 
 ---
