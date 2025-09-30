@@ -1,5 +1,11 @@
+using MotoFacil.API.AutoMapper;
+using MotoFacil.API.Infrastructure.Contexts;
+using MotoFacil.API.Services;
+using MotoFacil.API.Infrastructure.Repositories;
+using MotoFacil.API.Infrastructure.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
-namespace MotoFacil.API_devops
+namespace MotoFacil.API
 {
     public class Program
     {
@@ -7,29 +13,34 @@ namespace MotoFacil.API_devops
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            builder.Services.AddScoped<MotoService>();
+            builder.Services.AddScoped<IMotoRepository, MotoRepository>();
+
+            builder.Services.AddScoped<UsuarioService>();
+            builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+
+            builder.Services.AddAutoMapper(typeof(MappingProfile));
+
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            builder.Services.AddDbContext<MotoFacilContext>(options => options.UseSqlServer(connectionString));
 
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
+            using (var scope = app.Services.CreateScope())
             {
-                app.UseSwagger();
-                app.UseSwaggerUI();
+                var db = scope.ServiceProvider.GetRequiredService<MotoFacilContext>();
+                db.Database.Migrate();
             }
 
+            app.UseSwagger();
+            app.UseSwaggerUI();
             app.UseHttpsRedirection();
-
             app.UseAuthorization();
-
-
             app.MapControllers();
-
             app.Run();
         }
     }

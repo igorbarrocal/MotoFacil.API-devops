@@ -1,14 +1,10 @@
-﻿namespace Moto.API.DTOs.Moto
+﻿namespace MotoFacil.API.DTOs.Moto
 {
-    /// <summary>
-    /// Representa os dados necessários para cadastrar ou atualizar uma Moto.
-    /// </summary>
     public class MotoDTO
     {
-        public required string Modelo { get; set; }
-        public required string Placa { get; set; }
-        public required string Chassi { get; set; }
+        public string Modelo { get; set; } = string.Empty;
+        public string Placa { get; set; } = string.Empty;
+        public string Chassi { get; set; } = string.Empty;
         public string? ProblemaIdentificado { get; set; }
-        public long VagaId { get; set; }
     }
 }

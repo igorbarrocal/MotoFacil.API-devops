@@ -1,11 +1,10 @@
-﻿using MotoFacil.API.Domain.Enums;
-
-namespace MotoFacil.API.Infrastructure.Persistence
+﻿namespace MotoFacil.API.Infrastructure.Persistence
 {
-    /// <summary>
-    /// Entidade que representa um usuário do sistema.
-    /// Usuário pode ser administrador ou mecânico.
-    /// </summary>
+    public enum TipoUsuario
+    {
+        ADMINISTRADOR,
+        MECANICO
+    }
     public class Usuario
     {
         public long Id { get; set; }
@@ -13,16 +12,5 @@ namespace MotoFacil.API.Infrastructure.Persistence
         public string Email { get; set; } = string.Empty;
         public string Senha { get; set; } = string.Empty;
         public TipoUsuario Tipo { get; set; }
-
-        public Usuario() { }
-
-        public Usuario(long id, string nome, string email, string senha, TipoUsuario tipo)
-        {
-            Id = id;
-            Nome = nome;
-            Email = email;
-            Senha = senha;
-            Tipo = tipo;
-        }
     }
 }

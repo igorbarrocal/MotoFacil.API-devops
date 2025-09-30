@@ -1,4 +1,4 @@
-﻿using Moto.API.DTOs.Moto;
+﻿
 using MotoFacil.API.DTOs.Moto;
 using Swashbuckle.AspNetCore.Filters;
 
@@ -14,7 +14,7 @@ namespace MotoFacil.API.Examples
                 Placa = "ABC99E",
                 Chassi = "9C2JC4110JR000001",
                 ProblemaIdentificado = "Motor com ruído excessivo",
-                VagaId = 1
+                
             };
         }
     }
