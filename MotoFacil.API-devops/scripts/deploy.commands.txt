@@ -1,90 +1,42 @@
-# Comandos de Deploy - MotoFacil.API-devops (.NET + MySQL ou SQLServer no Azure)
+# ===============================
+# ?? Deploy MotoFacilAPI na Azure
+# ===============================
 
-## 1. Clone o repositório
-git clone https://github.com/igorbarrocal/MotoFacil.API-devops.git
-cd MotoFacil.API-devops
+# 1. Login no Azure
+Write-Host "?? Fazendo login no Azure..."
+az login
 
-## 2. Crie o grupo de recursos no Azure
-az group create --name motofacil-rg --location brazilSouth
+# 2. Variáveis do projeto (edite se quiser mudar nomes/região)
+$resourceGroup="MotoFacilRG"
+$location="brazilsouth"    # Região do Azure (São Paulo)
+$appServicePlan="MotoFacilPlan"
+$webAppName="motofacilapiigor"   # Precisa ser único no Azure!
+$projectPath=".\MotoFacilAPI"    # Pasta do projeto .NET
+$publishPath=".\publish"
 
-## 3. Crie o servidor MySQL (caso use MySQL)
-az mysql server create \
-  --name motofacilmysqlserver \
-  --resource-group motofacil-rg \
-  --location brazilSouth \
-  --admin-user motofaciladmin \
-  --admin-password "MotoFacil#2025" \
-  --sku-name B_Gen5_1 \
-  --version 5.7
+# 3. Selecionar a subscription (se tiver mais de uma, ajuste aqui)
+# az account set --subscription "NomeDaSuaSubscription"
 
-# OU (para SQLServer no Azure)
-az sql server create \
-  --name motofacilsqlserver \
-  --resource-group motofacil-rg \
-  --location brazilSouth \
-  --admin-user motofaciladmin \
-  --admin-password "MotoFacil#2025"
+# 4. Criar Resource Group
+Write-Host "?? Criando Resource Group..."
+az group create --name $resourceGroup --location $location
 
-## 4. Crie o banco de dados
-# MySQL:
-az mysql db create --resource-group motofacil-rg --server-name motofacilmysqlserver --name motofacil_db
+# 5. Criar App Service Plan (FREE - troca para B1/S1 se quiser mais performance)
+Write-Host "?? Criando App Service Plan..."
+az appservice plan create --name $appServicePlan --resource-group $resourceGroup --sku FREE
 
-# SQL Server:
-az sql db create --resource-group motofacil-rg --server motofacilsqlserver --name motofacil-db --service-objective S0
+# 6. Criar Web App .NET 8
+Write-Host "?? Criando Web App..."
+az webapp create --resource-group $resourceGroup --plan $appServicePlan --name $webAppName --runtime "DOTNET:8"
 
-## 5. Libere acesso do App Service ao banco
-# MySQL: (libere para todos, ou configure IP conforme necessário)
-az mysql server firewall-rule create --resource-group motofacil-rg --server motofacilmysqlserver --name AllowAll --start-ip-address 0.0.0.0 --end-ip-address 255.255.255.255
+# 7. Publicar API .NET 8
+Write-Host "?? Publicando projeto..."
+dotnet publish $projectPath -c Release -o $publishPath
 
-# SQL Server:
-az sql server firewall-rule create --resource-group motofacil-rg --server motofacilsqlserver --name AllowAzureServices --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
+# 8. Fazer deploy
+Write-Host "?? Fazendo deploy para Azure..."
+az webapp deploy --resource-group $resourceGroup --name $webAppName --src-path $publishPath
 
-## 6. Libere acesso do seu IP ao banco (opcional)
-# MySQL:
-az mysql server firewall-rule create --resource-group motofacil-rg --server motofacilmysqlserver --name AllowLocal --start-ip-address <SEU_IP> --end-ip-address <SEU_IP>
-
-# SQL Server:
-az sql server firewall-rule create --resource-group motofacil-rg --server motofacilsqlserver --name AllowLocal --start-ip-address <SEU_IP> --end-ip-address <SEU_IP>
-
-## 7. Crie o App Service Plan
-az appservice plan create --name motofacil-plan --resource-group motofacil-rg --location brazilSouth --sku B1
-
-## 8. Crie o App Service (.NET 8)
-az webapp create --resource-group motofacil-rg --plan motofacil-plan --name motofacil-app --runtime "dotnet:8"
-
-## 9. Obtenha a string de conexão
-# MySQL:
-# Server=motofacilmysqlserver.mysql.database.azure.com;Database=motofacil_db;Uid=motofaciladmin;Pwd=MotoFacil#2025;SslMode=Required;
-
-# SQL Server:
-# Server=tcp:motofacilsqlserver.database.windows.net,1433;Initial Catalog=motofacil-db;Persist Security Info=False;User ID=motofaciladmin;Password=MotoFacil#2025;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;
-
-## 10. Configure a string de conexão no App Service
-az webapp config connection-string set \
-  --resource-group motofacil-rg \
-  --name motofacil-app \
-  --connection-string-type MySql \
-  --settings DefaultConnection="Server=motofacilmysqlserver.mysql.database.azure.com;Database=motofacil_db;Uid=motofaciladmin;Pwd=MotoFacil#2025;SslMode=Required;"
-
-# OU para SQL Server:
-az webapp config connection-string set \
-  --resource-group motofacil-rg \
-  --name motofacil-app \
-  --connection-string-type SQLAzure \
-  --settings DefaultConnection="Server=tcp:motofacilsqlserver.database.windows.net,1433;Initial Catalog=motofacil-db;Persist Security Info=False;User ID=motofaciladmin;Password=MotoFacil#2025;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
-
-## 11. Compile e publique o projeto
-dotnet publish -c Release -o ./publish
-
-## 12. Compacte os arquivos publicados
-# No Windows Powershell:
-Compress-Archive -Path ./publish/* -DestinationPath ./app.zip
-
-# Ou no Linux/macOS:
-zip -r app.zip ./publish/*
-
-## 13. Faça o deploy do ZIP para o App Service
-az webapp deployment source config-zip --resource-group motofacil-rg --name motofacil-app --src ./app.zip
-
-## 14. Acesse o Swagger da API publicada
-https://motofacil-app.azurewebsites.net/swagger
+# 9. Mostrar URL final
+$defaultHostName = az webapp show --resource-group $resourceGroup --name $webAppName --query defaultHostName -o tsv
+Write-Host "? Deploy finalizado! Sua API está disponível em: https://$defaultHostName/swagger"
