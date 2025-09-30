@@ -6,6 +6,11 @@
 - Cauan da Cruz – RM558238
 
 ---
+## Links
+
+- https://youtu.be/MFZMF2ohBq8
+
+---
 
 ## Descrição da Solução
 
@@ -127,9 +132,3 @@ https://motofacil-app.azurewebsites.net/swagger
 
 ---
 
-## Links
-
-- [Repositório no GitHub](https://github.com/igorbarrocal/MotoFacil.API-devops)
-- [Vídeo demonstrativo no YouTube](<coloque-o-link-do-seu-video-aqui>)
-
----
