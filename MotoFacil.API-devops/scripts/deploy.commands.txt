@@ -1,42 +1,88 @@
-# ===============================
-# ?? Deploy MotoFacilAPI na Azure
-# ===============================
+# Passo a Passo para Deploy no Azure
 
-# 1. Login no Azure
-Write-Host "?? Fazendo login no Azure..."
-az login
+Cole cada comando individualmente no terminal da Azure CLI.  
+Cada bloco abaixo mostra o comando e um comentário explicando sua função.
 
-# 2. Vari�veis do projeto (edite se quiser mudar nomes/regi�o)
-$resourceGroup="MotoFacilRG"
-$location="brazilsouth"    # Regi�o do Azure (S�o Paulo)
-$appServicePlan="MotoFacilPlan"
-$webAppName="motofacilapiigor"   # Precisa ser �nico no Azure!
-$projectPath=".\MotoFacilAPI"    # Pasta do projeto .NET
-$publishPath=".\publish"
+---
 
-# 3. Selecionar a subscription (se tiver mais de uma, ajuste aqui)
-# az account set --subscription "NomeDaSuaSubscription"
+# 1. Clonar o repositório do projeto
+git clone https://github.com/igorbarrocal/MotoFacil.API-devops.git
+cd MotoFacil.API-devops
 
-# 4. Criar Resource Group
-Write-Host "?? Criando Resource Group..."
-az group create --name $resourceGroup --location $location
+---
 
-# 5. Criar App Service Plan (FREE - troca para B1/S1 se quiser mais performance)
-Write-Host "?? Criando App Service Plan..."
-az appservice plan create --name $appServicePlan --resource-group $resourceGroup --sku FREE
+# 2. Criar o grupo de recursos (Resource Group)
+az group create --name motofacil-rg --location brazilSouth
+# (Cria um agrupador lógico para os recursos do Azure)
 
-# 6. Criar Web App .NET 8
-Write-Host "?? Criando Web App..."
-az webapp create --resource-group $resourceGroup --plan $appServicePlan --name $webAppName --runtime "DOTNET:8"
+---
 
-# 7. Publicar API .NET 8
-Write-Host "?? Publicando projeto..."
-dotnet publish $projectPath -c Release -o $publishPath
+# 3. Criar o servidor SQL Azure
+az sql server create --name motofacilserver --resource-group motofacil-rg --location brazilSouth --admin-user motofaciladmin --admin-password "Motofacil#2025"
+# (Provisiona um servidor SQL na Azure)
 
-# 8. Fazer deploy
-Write-Host "?? Fazendo deploy para Azure..."
-az webapp deploy --resource-group $resourceGroup --name $webAppName --src-path $publishPath
+---
 
-# 9. Mostrar URL final
-$defaultHostName = az webapp show --resource-group $resourceGroup --name $webAppName --query defaultHostName -o tsv
-Write-Host "? Deploy finalizado! Sua API est� dispon�vel em: https://$defaultHostName/swagger"
+# 4. Criar o banco de dados SQL
+az sql db create --resource-group motofacil-rg --server motofacilserver --name motofacil-db --service-objective S0
+# (Cria o banco de dados na nuvem)
+
+---
+
+# 5. Exibir a string de conexão (Ado.Net)
+az sql db show-connection-string --server motofacilserver --name motofacil-db --client ado.net
+# (Mostra a string de conexão para uso na aplicação)
+
+---
+
+# 6. Liberar acesso da Azure ao SQL
+az sql server firewall-rule create --resource-group motofacil-rg --server motofacilserver --name AllowAzureServices --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
+# (Permite conexões vindas de serviços do Azure)
+
+---
+
+# 7. Liberar acesso do seu IP ao SQL
+az sql server firewall-rule create --resource-group motofacil-rg --server motofacilserver --name AllowLocal --start-ip-address <SEU IP> --end-ip-address <SEU IP>
+# (Substitua <SEU IP> pelo seu IP real. Permite conexões do seu computador ao banco)
+
+---
+
+# 8. Criar o plano de App Service
+az appservice plan create --name motofacil-plan --resource-group motofacil-rg --location brazilSouth --sku B1
+# (Cria o plano de hospedagem para o App Service)
+
+---
+
+# 9. Criar o App Service (.NET 8)
+az webapp create --resource-group motofacil-rg --plan motofacil-plan --name motofacil-app --runtime "DOTNET:8"
+# (Cria a aplicação web hospedada no Azure)
+
+---
+
+# 10. Configurar a string de conexão no App Service
+az webapp config connection-string set --resource-group motofacil-rg --name motofacil-app --connection-string-type SQLAzure --settings DefaultConnection="Server=tcp:motofacilserver.database.windows.net,1433;Database=motofacil-db;User ID=motofaciladmin;Password=Motofacil#2025;Encrypt=true;TrustServerCertificate=false;Connection Timeout=30;"
+# (Define a conexão do App com o banco de dados criado)
+
+---
+
+# 11. Compilar e preparar publicação da aplicação
+dotnet publish -c Release -o ./publish
+# (Compila o projeto e gera os arquivos para deploy)
+
+---
+
+# 12. Compactar arquivos publicados
+Compress-Archive -Path ./publish/* -DestinationPath ./app.zip
+# (Compacta os arquivos publicados em um ZIP para upload)
+
+---
+
+# 13. Fazer deploy do ZIP para o App Service
+az webapp deployment source config-zip --resource-group motofacil-rg --name motofacil-app --src ./app.zip
+# (Envia e publica a aplicação no Azure)
+
+---
+
+# 14. Abrir o Swagger da API (no navegador)
+https://motofacil-app.azurewebsites.net/swagger
+# (Acesse este link para testar a API publicada)
