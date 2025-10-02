@@ -65,24 +65,30 @@ az webapp config connection-string set --resource-group motofacil-rg --name moto
 
 ---
 
-# 11. Compilar e preparar publicação da aplicação
+# 11. Subir o Migrations no repositório
+dotnet ef database update --connection "Server=tcp:motofacilserver.database.windows.net,1433;Database=motofacil-db;User ID=motofaciladmin;Password=Motofacil#2025;Encrypt=true;TrustServerCertificate=false;Connection Timeout=30;"
+#(Subir o banco de dados no repositório)
+
+---
+
+# 12. Compilar e preparar publicação da aplicação
 dotnet publish -c Release -o ./publish
 # (Compila o projeto e gera os arquivos para deploy)
 
 ---
 
-# 12. Compactar arquivos publicados
+# 13. Compactar arquivos publicados
 Compress-Archive -Path ./publish/* -DestinationPath ./app.zip
 # (Compacta os arquivos publicados em um ZIP para upload)
 
 ---
 
-# 13. Fazer deploy do ZIP para o App Service
+# 14. Fazer deploy do ZIP para o App Service
 az webapp deployment source config-zip --resource-group motofacil-rg --name motofacil-app --src ./app.zip
 # (Envia e publica a aplicação no Azure)
 
 ---
 
-# 14. Abrir o Swagger da API (no navegador)
+# 15. Abrir o Swagger da API (no navegador)
 https://motofacil-app.azurewebsites.net/swagger
 # (Acesse este link para testar a API publicada)
