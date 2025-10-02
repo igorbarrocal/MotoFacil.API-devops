@@ -102,13 +102,18 @@ az webapp config connection-string set --resource-group motofacil-rg --name moto
 
 ### 4. Publicar a aplicação
 
-#### a) Compilar e preparar publicação
+### a)Fazer o Migration do DataBase
+```sh
+dotnet ef database update --connection "Server=tcp:motofacilserver.database.windows.net,1433;Database=motofacil-db;User ID=motofaciladmin;Password=Motofacil#2025;Encrypt=true;TrustServerCertificate=false;Connection Timeout=30;"
+```
+
+#### b) Compilar e preparar publicação
 
 ```sh
 dotnet publish -c Release -o ./publish
 ```
 
-#### b) Compactar arquivos publicados
+#### c) Compactar arquivos publicados
 
 ```sh
 Compress-Archive -Path ./publish/* -DestinationPath ./app.zip
