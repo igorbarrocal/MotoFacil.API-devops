@@ -1,0 +1,96 @@
+# Azure Pipelines YAML para MotoFacil.API-devops
+# Ajustes necessários: 
+#  - $(AZURE_SERVICE_CONNECTION): nome do Service Connection (Azure RM) no Azure DevOps
+#  - $(ACR_SERVICE_CONNECTION): nome do Service Connection do ACR (se usar ACR) ou use a mesma service connection
+#  - $(ACR_LOGIN_SERVER): ex: myregistry.azurecr.io
+#  - appName: nome do Azure Web App (ex: motofacil-app)
+#  - Ajuste o path do projeto/solution se necessário (PROPERTY: solutionPath)
+
+trigger:
+  branches:
+    include:
+      - master
+
+variables:
+  buildConfiguration: 'Release'
+  solutionPath: 'MotoFacil.API-devops.sln'        # ajuste se sua solution está em outra pasta
+  projectPublishPath: 'src/MotoFacil.API'        # ajuste para o caminho do projeto web dentro da solution
+  imageName: 'motofacil/api'
+  # Substitua os nomes abaixo pelos seus nomes em Azure DevOps (Service Connections, ACR login)
+  AZURE_SERVICE_CONNECTION: 'AzureServiceConnection'   # <-- ajuste: service connection ARM
+  ACR_SERVICE_CONNECTION: 'ACRServiceConnection'       # <-- ajuste: service connection para ACR (opcional)
+  ACR_LOGIN_SERVER: '$(ACR_LOGIN_SERVER)'              # <-- ajuste: ex: myregistry.azurecr.io
+  appName: 'motofacil-app'                             # <-- ajuste: nome do Azure Web App configurado
+
+stages:
+- stage: Build_and_Test
+  displayName: 'Build, Test, Publish Artifact'
+  jobs:
+  - job: Build
+    displayName: 'Build job'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: UseDotNet@2
+      displayName: 'Use .NET SDK'
+      inputs:
+        packageType: 'sdk'
+        version: '8.0.x'
+    - script: dotnet restore $(solutionPath)
+      displayName: 'dotnet restore'
+    - script: dotnet build $(solutionPath) --configuration $(buildConfiguration) --no-restore
+      displayName: 'dotnet build'
+    - script: |
+        set -e
+        # Ajuste o comando de teste caso seus testes estejam em outro projeto/solução
+        dotnet test $(solutionPath) --configuration $(buildConfiguration) --no-build --logger "trx;LogFileName=test_results.trx"
+      displayName: 'dotnet test'
+    - script: |
+        dotnet publish $(projectPublishPath) -c $(buildConfiguration) -o $(Build.ArtifactStagingDirectory)/publish
+      displayName: 'dotnet publish (project)'
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish artifact (drop)'
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)/publish'
+        artifact: 'drop'
+
+- stage: Docker_Build_Push
+  displayName: 'Build Docker Image and push to ACR'
+  dependsOn: Build_and_Test
+  condition: succeeded()
+  jobs:
+  - job: DockerBuild
+    displayName: 'Docker build and push'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: Docker@2
+      displayName: 'Build and push image to ACR'
+      inputs:
+        containerRegistry: '$(ACR_SERVICE_CONNECTION)'   # service connection configurado no Azure DevOps
+        repository: '$(imageName)'
+        command: buildAndPush
+        Dockerfile: 'Dockerfile'
+        tags: |
+          $(Build.BuildId)
+
+- stage: Deploy
+  displayName: 'Deploy to Azure Web App (Container)'
+  dependsOn: Docker_Build_Push
+  condition: succeeded()
+  jobs:
+  - deployment: DeployWebApp
+    displayName: 'Deploy Web App Container'
+    environment: 'production'
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureWebAppContainer@1
+            displayName: 'Deploy container to Azure Web App'
+            inputs:
+              azureSubscription: '$(AZURE_SERVICE_CONNECTION)'   # Service Connection (ARM)
+              appName: '$(appName)'
+              imageName: '$(ACR_LOGIN_SERVER)/$(imageName):$(Build.BuildId)'
