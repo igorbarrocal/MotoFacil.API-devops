@@ -1,30 +1,24 @@
-# ================================
-# Etapa 1: Build com .NET SDK 8.0
-# ================================
+# Etapa de build
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copia o arquivo de solução e o projeto .csproj principal
+# Copia o arquivo de solução e o csproj
 COPY MotoFacil.API-devops.sln ./
-COPY MotoFacil.API-devops.csproj ./
+COPY MotoFacil.API-devops/*.csproj ./MotoFacil.API-devops/
 
 # Restaura as dependências
-RUN dotnet restore MotoFacil.API-devops.csproj
+RUN dotnet restore
 
-# Copia todos os arquivos restantes do projeto
-COPY . .
+# Copia todos os arquivos do projeto
+COPY MotoFacil.API-devops/ ./MotoFacil.API-devops/
 
-# Compila e publica a aplicação em modo Release
-RUN dotnet publish MotoFacil.API-devops.csproj -c Release -o /app/publish --no-restore
+WORKDIR /src/MotoFacil.API-devops
 
-# ================================
-# Etapa 2: Runtime (imagem leve)
-# ================================
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+# Publica o projeto
+RUN dotnet publish -c Release -o /app/publish
+
+# Etapa de runtime
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
-ENV ASPNETCORE_URLS=http://+:80
-
 COPY --from=build /app/publish .
-
-EXPOSE 80
 ENTRYPOINT ["dotnet", "MotoFacil.API-devops.dll"]
