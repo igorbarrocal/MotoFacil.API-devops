@@ -1,0 +1,10 @@
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+WORKDIR /app
+ENV ASPNETCORE_URLS=http://+:80
+
+# Contexto do build será a pasta publish (arquivos já publicados pelo agente)
+COPY . .
+
+EXPOSE 80
+
+ENTRYPOINT ["dotnet", "MotoFacil.API.dll"]
