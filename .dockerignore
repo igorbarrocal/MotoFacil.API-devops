@@ -1,0 +1,14 @@
+bin
+obj
+.vs
+*.user
+*.suo
+*.lock.json
+*.nupkg
+*.vs
+PublishOutput
+app.zip
+*.db
+.idea
+.vscode
+*.log
