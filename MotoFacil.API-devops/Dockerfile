@@ -13,3 +13,5 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "MotoFacil.API-devops.dll"]
+
+EXPOSE 80
