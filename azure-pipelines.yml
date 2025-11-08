@@ -1,0 +1,37 @@
+trigger:
+- master
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  containerRegistry: 'dotnetmssqlrm555217.azurecr.io'
+  repository: 'dotnetsql'
+  imageTag: 'latest' # Use 'latest' para simplificar o deploy
+
+steps:
+- task: Docker@2
+  displayName: 'Build and Push Docker image'
+  inputs:
+    containerRegistry: 'dotnetmssqlrm555217'
+    repository: '$(repository)'
+    command: 'buildAndPush'
+    Dockerfile: '**/Dockerfile'
+    tags: |
+      $(imageTag)
+
+- task: AzureWebAppContainer@1
+  displayName: 'Deploy to Azure App Service (container)'
+  inputs:
+    azureSubscription: 'Igor Dias Barrocal'
+    appName: 'acrwebapprm555217'
+    containers: '$(containerRegistry)/$(repository):$(imageTag)'
+- task: Docker@2
+  inputs:
+    containerRegistry: 'dotnetmssqlrm555217'
+    repository: 'dotnetsql'
+    command: 'buildAndPush'
+    Dockerfile: '**/Dockerfile'
+    tags: |
+      $(Build.BuildId)]
+      latest
