@@ -20,5 +20,6 @@ steps:
 
 - task: AzureWebAppContainer@1
   inputs:
+    azureSubscription: 'Igor Dias Barrocal'
     appName: 'acrwebapprm555217'
-    containers: 'dotnetmssqlrm555217.azurecr.io/dotnetsql:$(Build.BuildId)'      
+    containers: 'dotnetmssqlrm555217.azurecr.io/dotnetsql:$(Build.BuildId)'
