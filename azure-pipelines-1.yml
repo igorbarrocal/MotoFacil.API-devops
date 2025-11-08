@@ -1,0 +1,25 @@
+
+
+trigger:
+- master
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+
+- task: Docker@2
+  inputs:
+    containerRegistry: 'dotnetmssqlrm555217'
+    repository: 'dotnetsql'
+    command: 'buildAndPush'
+    Dockerfile: '**/Dockerfile'
+    tags: |
+      $(Build.BuildId)
+      latest
+
+- task: AzureWebAppContainer@1
+  inputs:
+    azureSubscription: 'Igor Dias Barrocal'
+    appName: 'acrwebapprm555217'
+    containers: 'dotnetmssqlrm555217.azurecr.io/dotnetsql:$(Build.BuildId)'
