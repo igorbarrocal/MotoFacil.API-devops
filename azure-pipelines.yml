@@ -18,11 +18,11 @@ steps:
     command: 'buildAndPush'
     Dockerfile: '**/Dockerfile'
     tags: |
-      $(imageTag)
+      $(Build.BuildId)
 
 - task: AzureWebAppContainer@1
   displayName: 'Deploy to Azure App Service (container)'
   inputs:
     azureSubscription: 'Igor Dias Barrocal (52f5586a-47ef-42ba-a49d-095f99384cff)'
     appName: 'acrwebapprm555217'
-    containers: '$(containerRegistry)/$(repository):$(imageTag)'
+    containers: '$(containerRegistry)/$(repository):$(Build.BuildId)'
